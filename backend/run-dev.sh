@@ -4,12 +4,12 @@ set -e
 # luôn đứng tại thư mục backend (nơi có .env, package.json)
 cd "$(dirname "$0")"
 
-echo "Starting ngrok for http 3000..."
+echo "Starting ngrok for http 3000... Please wait."
 ngrok http 3000 > /dev/null &
 NGROK_PID=$!
 
 # chờ ngrok khởi động
-sleep 2
+sleep 5
 
 # lấy public_url https từ ngrok
 URL=$(curl -s http://127.0.0.1:4040/api/tunnels \
