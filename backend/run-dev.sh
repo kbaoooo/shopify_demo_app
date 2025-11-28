@@ -21,16 +21,16 @@ echo "Ngrok URL: $URL"
 
 # cập nhật HOST trong backend/.env
 if [ -f ".env" ]; then
-  if grep -q "^HOST=" .env; then
-    sed -i "s|^HOST=.*|HOST=$URL|" .env
+  if grep -q "^SHOPIFY_HOST=" .env; then
+    sed -i "s|^SHOPIFY_HOST=.*|SHOPIFY_HOST=$URL|" .env
   else
-    echo "HOST=$URL" >> .env
+    echo "SHOPIFY_HOST=$URL" >> .env
   fi
 else
-  echo "HOST=$URL" > .env
+  echo "SHOPIFY_HOST=$URL" > .env
 fi
 
-echo "Updated backend/.env: HOST=$URL"
+echo "Updated backend/.env: SHOPIFY_HOST=$URL"
 echo "Starting NestJS dev..."
 
 # chạy NestJS với hot reload

@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev:backend": "cd backend && bash run-dev.sh",
-    "dev:frontend": "cd frontend && npm run dev",
+    "dev:frontend": "cd frontend && bash run-dev.sh",
     "dev": "concurrently -n BE,FE \"npm run dev:backend\" \"npm run dev:frontend\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

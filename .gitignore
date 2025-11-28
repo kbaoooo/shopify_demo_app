@@ -54,6 +54,7 @@ lerna-debug.log*
 # Temporary directories
 /backend/.temp/
 /backend/.tmp/
+/backend/db-data/
 
 # Frontend caches
 /frontend/.vite

@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Shop {
+  id          Int      @id @default(autoincrement())
+  shopDomain  String   @unique
+  accessToken String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  countdowns  Countdown[]
+}
+
+model Countdown {
+  id          Int      @id @default(autoincrement())
+  shopId      Int
+  shop        Shop     @relation(fields: [shopId], references: [id])
+
+  name        String
+  message     String
+  startTime   DateTime
+  endTime     DateTime
+  status      CountdownStatus @default(ACTIVE)
+
+  position    CountdownPosition @default(TOP_BAR)
+  bgColor     String @default("#000000")
+  textColor   String @default("#ffffff")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum CountdownStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum CountdownPosition {
+  TOP_BAR
+  BOTTOM_BAR
+}
