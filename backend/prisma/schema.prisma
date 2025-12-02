@@ -20,34 +20,44 @@ model Shop {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  countdowns  Countdown[]
+  countdownTimers CountdownTimer[]
 }
 
-model Countdown {
-  id          Int      @id @default(autoincrement())
-  shopId      Int
-  shop        Shop     @relation(fields: [shopId], references: [id])
+model CountdownTimer {
+  id     Int  @id @default(autoincrement())
+  shopId Int
+  shop   Shop @relation(fields: [shopId], references: [id])
 
-  name        String
-  message     String
-  startTime   DateTime
-  endTime     DateTime
-  status      CountdownStatus @default(ACTIVE)
+  name    String     @default("Default timer")
+  message String     @default("Hurry up! Offer ends soon.")
+  type    TimmerType @default(FIXED)
 
-  position    CountdownPosition @default(TOP_BAR)
-  bgColor     String @default("#000000")
-  textColor   String @default("#ffffff")
+  startAt          DateTime?
+  endAt            DateTime?
+  evergreenMinutes Int?
+  position         TimerPosition @default(TOP_BAR)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  bgColor   String @default("#111827")
+  textColor String @default("#F9FAFB")
+  status           TimerStatus   @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-enum CountdownStatus {
-  ACTIVE
-  INACTIVE
+enum TimmerType {
+  FIXED
+  EVERGREEN
 }
 
-enum CountdownPosition {
+enum TimerPosition {
   TOP_BAR
   BOTTOM_BAR
+  PRODUCT_PAGE
+  CART_PAGE
+}
+
+enum TimerStatus {
+  ACTIVE
+  INACTIVE
 }

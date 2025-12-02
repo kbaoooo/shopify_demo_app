@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Controller,
   Get,
-  Param,
   Query,
   Res,
 } from '@nestjs/common';
@@ -15,12 +14,12 @@ import { ShopifyAuthService } from './shopify-auth.service';
 export class ShopifyAuthController {
   constructor(private readonly shopifyAuthService: ShopifyAuthService) {}
 
-  private redirectToShopifyAuth(shop: string, res: Response) {
-    if (!shop) throw new BadRequestException('Missing shop parameter');
+  private normalizeShopDomain(shop: string): string {
+    return shop.endsWith('.myshopify.com') ? shop : `${shop}.myshopify.com`;
+  }
 
-    const shopifyDomain = shop.endsWith('.myshopify.com')
-      ? shop
-      : `${shop}.myshopify.com`;
+  private redirectToShopifyAuth(shop: string, res: Response) {
+    const shopifyDomain = this.normalizeShopDomain(shop);
 
     const redirectUrl = `${process.env.SHOPIFY_HOST}/api/v1/auth/callback`;
     const scopes = process.env.SHOPIFY_SCOPES;
@@ -31,54 +30,92 @@ export class ShopifyAuthController {
       `&scope=${scopes}` +
       `&redirect_uri=${encodeURIComponent(redirectUrl)}`;
 
+    console.log('[AUTH] Redirecting to install URL:', installUrl);
     return res.redirect(installUrl);
   }
 
   @Get()
-  install(@Query('shop') shop: string, @Res() res: Response) {
-    return this.redirectToShopifyAuth(shop, res);
-  }
+  async install(@Query('shop') shop: string, @Res() res: Response) {
+    if (!shop) throw new BadRequestException('Missing shop parameter');
 
-  @Get(':host')
-  installWithHost(
-    @Param('host') _host: string, // bỏ qua
-    @Query('shop') shop: string,
-    @Res() res: Response,
-  ) {
-    return this.redirectToShopifyAuth(shop, res);
+    const shopifyDomain = this.normalizeShopDomain(shop);
+    console.log('[AUTH] /auth install, shop =', shopifyDomain);
+
+    const existing =
+      await this.shopifyAuthService.getShopByDomain(shopifyDomain);
+
+    if (existing) {
+      const frontendUrl = `${process.env.FRONTEND_URL}?shop=${encodeURIComponent(
+        shopifyDomain,
+      )}`;
+      console.log(
+        '[AUTH] Shop already installed. Redirecting to frontend:',
+        frontendUrl,
+      );
+      return res.redirect(frontendUrl);
+    }
+
+    console.log('[AUTH] New install. Redirecting to Shopify OAuth');
+    return this.redirectToShopifyAuth(shopifyDomain, res);
   }
 
   @Get('callback')
   async callback(@Query() query: any, @Res() res: Response) {
+    console.log('=== Shopify callback start ===');
+    console.log('[AUTH] Raw query:', query);
+
     const { shop, hmac, code } = query;
     if (!shop || !hmac || !code) {
+      console.error('[AUTH] Missing params in callback');
       throw new BadRequestException('Missing parameters');
     }
 
     if (!this.verifyHmac(query)) {
+      console.error('[AUTH] Invalid HMAC in callback');
       throw new BadRequestException('Invalid HMAC');
     }
 
-    const shopifyDomain = shop.endsWith('.myshopify.com')
-      ? shop
-      : `${shop}.myshopify.com`;
-
+    const shopifyDomain = this.normalizeShopDomain(shop);
     const tokenUrl = `https://${shopifyDomain}/admin/oauth/access_token`;
 
-    const response = await axios.post(tokenUrl, {
-      client_id: process.env.SHOPIFY_API_KEY,
-      client_secret: process.env.SHOPIFY_API_SECRET,
-      code,
-    });
+    try {
+      console.log('[AUTH] Requesting access token from:', tokenUrl);
 
-    const accessToken = response.data.access_token as string;
+      const response = await axios.post(tokenUrl, {
+        client_id: process.env.SHOPIFY_API_KEY,
+        client_secret: process.env.SHOPIFY_API_SECRET,
+        code,
+      });
 
-    await this.shopifyAuthService.upsertShop(shopifyDomain, accessToken);
+      console.log('[AUTH] Token response status:', response.status);
+      console.log('[AUTH] Token response data:', response.data);
 
-    const frontendUrl = `${process.env.FRONTEND_HOST}?shop=${encodeURIComponent(
-      shopifyDomain,
-    )}`;
-    return res.redirect(frontendUrl);
+      const accessToken = response.data.access_token as string;
+
+      console.log('[AUTH] Upserting shop in DB...');
+      await this.shopifyAuthService.upsertShop(shopifyDomain, accessToken);
+      console.log('[AUTH] Upsert done');
+
+      const frontendUrl = `${process.env.FRONTEND_URL}?shop=${encodeURIComponent(
+        shopifyDomain,
+      )}`;
+
+      console.log('[AUTH] Redirecting to frontend URL:', frontendUrl);
+      return res.redirect(frontendUrl);
+    } catch (err: any) {
+      console.error('=== ERROR in callback ===');
+      if (err.response) {
+        console.error('Status:', err.response.status);
+        console.error('Data  :', err.response.data);
+      } else {
+        console.error('Message:', err.message);
+        console.error(err);
+      }
+
+      return res
+        .status(500)
+        .send('OAuth callback error. Check backend logs for details.');
+    }
   }
 
   private verifyHmac(query: any): boolean {
@@ -93,6 +130,14 @@ export class ShopifyAuthController {
       .update(message)
       .digest('hex');
 
-    return generated === hmac;
+    const valid = generated === hmac;
+    if (!valid) {
+      console.error('[AUTH] HMAC mismatch', {
+        expected: hmac,
+        generated,
+        message,
+      });
+    }
+    return valid;
   }
 }
