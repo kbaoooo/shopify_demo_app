@@ -11,9 +11,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       throw new Error('DATABASE_URL is not defined');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
     const adapter = new PrismaPg({ connectionString }) as unknown as PrismaPg;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
     super({ adapter });
   }
 

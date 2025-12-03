@@ -1,13 +1,14 @@
 import { NestFactory } from '@nestjs/core';
 import 'dotenv/config';
-import { Request } from 'express';
+import * as express from 'express';
+import * as path from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const corsOriginWhiteList = process.env.CORS_ORIGINS?.split(',') || [];
 
-  app.use((req: Request, _res, next) => {
+  app.use((req: express.Request, _res, next) => {
     console.log('REQ:', req.method, req.originalUrl);
     next();
   });
@@ -16,6 +17,11 @@ async function bootstrap() {
     origin: corsOriginWhiteList,
     credentials: true,
   });
+
+  app.use(
+    '/storefront',
+    express.static(path.join(__dirname, '..', 'public/storefront')),
+  );
 
   // Set global prefix for all routes: url will be /api/v1/...
   app.setGlobalPrefix('api/v1');

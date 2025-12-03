@@ -1,20 +1,27 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { Shop } from 'generated/prisma/client';
+import { ModelName } from 'generated/prisma/internal/prismaNamespace';
+import { EditService, FindService } from 'src/shared/services';
 
 @Injectable()
 export class ShopifyAuthService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly editService: EditService,
+    private readonly findService: FindService,
+  ) {}
 
   async upsertShop(shopDomain: string, accessToken: string) {
-    return this.prismaService.shop.upsert({
+    return await this.editService.upsert<Shop>({
+      model: ModelName.Shop,
       where: { shopDomain },
-      update: { accessToken },
       create: { shopDomain, accessToken },
+      update: { accessToken },
     });
   }
 
   async getShopByDomain(shopDomain: string) {
-    return this.prismaService.shop.findUnique({
+    return await this.findService.findUniqueBy<Shop>({
+      model: ModelName.Shop,
       where: { shopDomain },
     });
   }
