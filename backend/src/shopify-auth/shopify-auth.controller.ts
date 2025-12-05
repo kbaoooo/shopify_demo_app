@@ -117,6 +117,13 @@ export class ShopifyAuthController {
       console.log('[AUTH] Upsert done');
       console.log('[AUTH] Ensuring script tag...');
       await this.shopifyAuthService.ensureScriptTag(shopifyDomain, accessToken);
+
+      console.log('[AUTH] Ensuring app/uninstalled webhook...');
+      await this.shopifyAuthService.ensureAppUninstalledWebhook(
+        shopifyDomain,
+        accessToken,
+      );
+
       const frontendUrl = `${process.env.FRONTEND_URL}?shop=${encodeURIComponent(
         shopifyDomain,
       )}`;

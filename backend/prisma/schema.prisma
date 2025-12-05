@@ -14,13 +14,13 @@ datasource db {
 }
 
 model Shop {
-  id          Int      @id @default(autoincrement())
-  shopDomain  String   @unique
+  id          Int       @id @default(autoincrement())
+  shopDomain  String    @unique
   accessToken String
-  isInstalled  Boolean  @default(true)
-  uninstallAt  DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isInstalled Boolean   @default(true)
+  uninstallAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   countdownTimers CountdownTimer[]
 }
@@ -39,12 +39,14 @@ model CountdownTimer {
   evergreenMinutes Int?
   position         TimerPosition @default(TOP_BAR)
 
-  bgColor   String @default("#111827")
-  textColor String @default("#F9FAFB")
-  status           TimerStatus   @default(ACTIVE)
+  bgColor   String      @default("#111827")
+  textColor String      @default("#F9FAFB")
+  status    TimerStatus @default(INACTIVE)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([shopId, name])
 }
 
 enum TimmerType {

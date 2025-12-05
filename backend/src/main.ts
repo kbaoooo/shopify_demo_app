@@ -1,5 +1,7 @@
 import { NestFactory } from '@nestjs/core';
+import * as bodyParser from 'body-parser';
 import 'dotenv/config';
+import { IncomingMessage, ServerResponse } from 'http';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -44,6 +46,20 @@ async function bootstrap() {
     allowedHeaders:
       'Content-Type,Authorization,X-Shop-Domain,X-Requested-With,Accept',
   });
+  app.use(
+    bodyParser.json({
+      verify: (
+        req: IncomingMessage,
+        _res: ServerResponse,
+        buf: Buffer,
+        encoding: string,
+      ) => {
+        (req as IncomingMessage & { rawBody?: string }).rawBody = buf.toString(
+          encoding as BufferEncoding,
+        );
+      },
+    }),
+  );
 
   await app.listen(process.env.PORT ?? 3000, () => {
     console.log(

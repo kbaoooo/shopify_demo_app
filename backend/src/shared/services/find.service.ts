@@ -12,6 +12,18 @@ interface FindParams {
 @Injectable()
 export class FindService {
   constructor(private readonly prismaService: PrismaService) {}
+  async countBy(params: FindParams): Promise<number> {
+    const { model, where, optionals } = params;
+    const delegate = getPrismaDelegate<{
+      count: (args: Record<string, any>) => Promise<number>;
+    }>(this.prismaService, model);
+
+    return await delegate.count({
+      where,
+      ...optionals,
+    });
+  }
+
   // allow find by multiple fields
   async findUniqueBy<T>(params: FindParams): Promise<T | null> {
     const { model, where, optionals } = params;

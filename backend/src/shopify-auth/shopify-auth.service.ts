@@ -134,7 +134,10 @@ export class ShopifyAuthService {
     });
 
     if (!shop) {
-      console.warn('[WEBHOOK] app/uninstalled for unknown shop', normalized);
+      console.warn(
+        '[WEBHOOK] app/uninstalled for unknown shop',
+        normalizedDomain,
+      );
       return;
     }
 
@@ -142,8 +145,8 @@ export class ShopifyAuthService {
       model: ModelName.Shop,
       where: { id: shop.id },
       update: {
-        isActive: false,
-        uninstalledAt: new Date(),
+        isInstalled: false,
+        uninstallAt: new Date(),
       },
     });
 

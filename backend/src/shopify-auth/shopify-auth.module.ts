@@ -6,5 +6,6 @@ import { ShopifyAuthService } from './shopify-auth.service';
 @Module({
   providers: [ShopifyAuthService, EditService, FindService],
   controllers: [ShopifyAuthController],
+  exports: [ShopifyAuthService],
 })
 export class ShopifyAuthModule {}

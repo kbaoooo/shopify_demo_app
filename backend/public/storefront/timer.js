@@ -48,6 +48,47 @@
         });
     }
 
+    // true nếu đang chạy trong iframe (theme preview, editor…)
+    function isInIframe() {
+      try {
+        return window.top !== window.self;
+      } catch (e) {
+        return true;
+      }
+    }
+
+    // Chừa chỗ cho bottom bar để không bị che/cụt
+    function reserveSpaceForBottomBar(bar, extraBottom) {
+      requestAnimationFrame(function () {
+        var height = bar.offsetHeight || 48;
+        var bodyStyle = window.getComputedStyle(document.body);
+        var current = parseInt(bodyStyle.paddingBottom || '0', 10);
+        var targetPadding = height + (extraBottom || 0);
+
+        if (targetPadding > current) {
+          // inline style, khá mạnh, trừ khi theme dùng !important
+          document.body.style.paddingBottom = targetPadding + 'px';
+        }
+      });
+    }
+
+    // Tính vị trí top cho TOP_BAR: nằm dưới header/menu
+    function computeTopOffsetUnderHeader() {
+      try {
+        var header =
+          document.querySelector('header') ||
+          document.querySelector('.shopify-section-header') ||
+          document.querySelector('#shopify-section-header');
+
+        if (!header) return 0;
+
+        var rect = header.getBoundingClientRect();
+        return rect.bottom; // khoảng cách từ top viewport đến đáy header
+      } catch (e) {
+        return 0;
+      }
+    }
+
     function createBar(timer) {
       var id = 'ect-bar-' + timer.id;
       if (document.getElementById(id)) return;
@@ -57,7 +98,7 @@
       bar.style.position = 'fixed';
       bar.style.left = '0';
       bar.style.right = '0';
-      bar.style.zIndex = '9999';
+      bar.style.zIndex = '2147483647';
       bar.style.padding = '10px 16px';
       bar.style.display = 'flex';
       bar.style.justifyContent = 'center';
@@ -67,11 +108,20 @@
       bar.style.backgroundColor = timer.bgColor || '#111827';
       bar.style.color = timer.textColor || '#f9fafb';
       bar.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+      bar.style.boxSizing = 'border-box';
+
+      var extraBottom = 0;
 
       if (timer.position === 'BOTTOM_BAR') {
-        bar.style.bottom = '0';
+        // nếu đang ở trong iframe (theme preview) thì đẩy bar lên ~60px
+        if (isInIframe()) {
+          extraBottom = 60; // đủ để vượt qua Shopify preview bar
+        }
+        bar.style.bottom = extraBottom + 'px';
       } else {
-        bar.style.top = '0';
+        // TOP_BAR: đặt dưới header/menu
+        var offset = computeTopOffsetUnderHeader();
+        bar.style.top = offset + 'px';
       }
 
       var msgSpan = document.createElement('span');
@@ -84,6 +134,10 @@
       bar.appendChild(msgSpan);
       bar.appendChild(countdownSpan);
       document.body.appendChild(bar);
+
+      if (timer.position === 'BOTTOM_BAR') {
+        reserveSpaceForBottomBar(bar, extraBottom);
+      }
 
       var target = null;
 
@@ -105,11 +159,11 @@
       function format(ms) {
         if (!target || ms <= 0) return '00:00';
 
-        var total = Math.floor(ms / 1000); // tổng số giây
-        var d = Math.floor(total / 86400); // ngày
-        var h = Math.floor((total % 86400) / 3600); // giờ
-        var m = Math.floor((total % 3600) / 60); // phút
-        var s = total % 60; // giây
+        var total = Math.floor(ms / 1000);
+        var d = Math.floor(total / 86400);
+        var h = Math.floor((total % 86400) / 3600);
+        var m = Math.floor((total % 3600) / 60);
+        var s = total % 60;
 
         if (d > 0) {
           return (
@@ -141,7 +195,6 @@
         var now = Date.now();
         var diff = target ? target - now : 0;
 
-        // thay (timer) trong message bằng countdown
         var baseText = text.replace('(timer)', '').trim();
         msgSpan.textContent = baseText;
         countdownSpan.textContent = format(diff);
