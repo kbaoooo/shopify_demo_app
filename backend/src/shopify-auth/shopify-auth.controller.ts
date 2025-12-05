@@ -44,19 +44,39 @@ export class ShopifyAuthController {
     const existing =
       await this.shopifyAuthService.getShopByDomain(shopifyDomain);
 
-    if (existing) {
+    // Nếu shop chưa tồn tại trong DB, redirect đến Shopify OAuth: choox này sẽ vào callbcak và tạo mới đưuọc script_tag
+    if (!existing) {
+      console.log('[AUTH] No existing shop, redirecting to Shopify OAuth');
+      return this.redirectToShopifyAuth(shopifyDomain, res);
+    }
+
+    // Shop đã tồn tại, đảm bảo có script_tag rồi redirect về frontend
+    try {
+      console.log('[AUTH] Existing shop, ensuring ScriptTag...');
+      console.log('SHOP EXISTING ACCESS TOKEN', existing.accessToken);
+
+      await this.shopifyAuthService.ensureScriptTag(
+        shopifyDomain,
+        existing.accessToken,
+      );
+
       const frontendUrl = `${process.env.FRONTEND_URL}?shop=${encodeURIComponent(
         shopifyDomain,
       )}`;
-      console.log(
-        '[AUTH] Shop already installed. Redirecting to frontend:',
-        frontendUrl,
-      );
+      console.log('[AUTH] Redirecting to frontend URL:', frontendUrl);
       return res.redirect(frontendUrl);
-    }
+    } catch (err: any) {
+      // token expired
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        console.log(
+          '[AUTH] access token invalid, redirecting to Shopify OAuth again',
+        );
+        return this.redirectToShopifyAuth(shopifyDomain, res);
+      }
 
-    console.log('[AUTH] New install. Redirecting to Shopify OAuth');
-    return this.redirectToShopifyAuth(shopifyDomain, res);
+      console.error('[AUTH] ensureScriptTag error:', err?.message || err);
+      throw err;
+    }
   }
 
   @Get('callback')
@@ -95,7 +115,8 @@ export class ShopifyAuthController {
       console.log('[AUTH] Upserting shop in DB...');
       await this.shopifyAuthService.upsertShop(shopifyDomain, accessToken);
       console.log('[AUTH] Upsert done');
-
+      console.log('[AUTH] Ensuring script tag...');
+      await this.shopifyAuthService.ensureScriptTag(shopifyDomain, accessToken);
       const frontendUrl = `${process.env.FRONTEND_URL}?shop=${encodeURIComponent(
         shopifyDomain,
       )}`;

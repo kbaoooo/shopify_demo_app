@@ -4,8 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev:backend": "cd backend && bash run-dev.sh",
-    "dev:frontend": "cd frontend && bash run-dev.sh",
+    "dev:backend:ngrok": "cd backend && bash run-dev.sh",
+    "dev:frontend:ngrok": "cd frontend && bash run-dev.sh",
+    "dev:ngrok": "concurrently -n BE,FE \"npm run dev:backend:ngrok\" \"npm run dev:frontend:ngrok\"",
+    "dev:backend": "cd backend && npm run start:dev",
+    "dev:frontend": "cd frontend && npm run dev",
     "dev": "concurrently -n BE,FE \"npm run dev:backend\" \"npm run dev:frontend\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -15,5 +18,6 @@
   "type": "commonjs",
   "devDependencies": {
     "concurrently": "^9.2.1"
-  }
+  },
+  "dependencies": {}
 }

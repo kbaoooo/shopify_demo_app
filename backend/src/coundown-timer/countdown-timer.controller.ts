@@ -75,25 +75,4 @@ export class CountdownTimerController {
     const shopDomain = this.resolveShopDomain(shopDomainHeader, shopQuery);
     return await this.countdownTimerService.toggleStatusTimer(shopDomain, +id);
   }
-
-  // STOREFRONT endpoints (JS script called)
-  @Get('storefront')
-  async getForStorefront(
-    @Query('shop') shopDomain: string,
-    @Query('position') position?: string,
-  ) {
-    const timers =
-      await this.countdownTimerService.getActiveTimersForStorefront(
-        shopDomain,
-        position,
-      );
-
-    return timers;
-  }
 }
-
-/**
- *  Admin URL: https://shopify.demoapp.website/api/v1/countdown-timer
- *  Storefront URL: https://shopify.demoapp.website/api/v1/countdown-timer/storefront?shop=shop-domain.myshopify.com&position=top-left
- *
- */

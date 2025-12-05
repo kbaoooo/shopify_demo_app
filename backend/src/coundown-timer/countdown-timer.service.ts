@@ -163,42 +163,4 @@ export class CountdownTimerService {
       },
     });
   }
-
-  /**
-   * Storefront: lấy các timer đang active cho một shop và vị trí + loại trang
-   */
-  async getActiveTimersForStorefront(shopDomain: string, position?: string) {
-    const shop: Shop = await this.getShopOrThrow(shopDomain);
-
-    const now = new Date();
-    // take timers that are active and within the time range (if fixed), or evergreen
-    const whereClauses = {
-      shopId: shop.id,
-      status: TimerStatus.ACTIVE,
-      ...(position ? { position } : {}),
-      OR: [
-        {
-          type: TimmerType.FIXED,
-          startAt: null,
-          endAt: { gt: now },
-        },
-        {
-          type: 'FIXED',
-          startAt: { lte: now },
-          endAt: { gt: now },
-        },
-        {
-          type: TimmerType.EVERGREEN,
-        },
-      ],
-    };
-
-    return await this.findService.findManyBy<CountdownTimer>({
-      model: ModelName.CountdownTimer,
-      where: whereClauses,
-      optionals: {
-        orderBy: { createdAt: 'desc' },
-      },
-    });
-  }
 }
