@@ -48,7 +48,6 @@
         });
     }
 
-    // true nếu đang chạy trong iframe (theme preview, editor…)
     function isInIframe() {
       try {
         return window.top !== window.self;
@@ -57,7 +56,6 @@
       }
     }
 
-    // Chừa chỗ cho bottom bar để không bị che/cụt
     function reserveSpaceForBottomBar(bar, extraBottom) {
       requestAnimationFrame(function () {
         var height = bar.offsetHeight || 48;
@@ -66,13 +64,11 @@
         var targetPadding = height + (extraBottom || 0);
 
         if (targetPadding > current) {
-          // inline style, khá mạnh, trừ khi theme dùng !important
           document.body.style.paddingBottom = targetPadding + 'px';
         }
       });
     }
 
-    // Tính vị trí top cho TOP_BAR: nằm dưới header/menu
     function computeTopOffsetUnderHeader() {
       try {
         var header =
@@ -83,7 +79,7 @@
         if (!header) return 0;
 
         var rect = header.getBoundingClientRect();
-        return rect.bottom; // khoảng cách từ top viewport đến đáy header
+        return rect.bottom;
       } catch (e) {
         return 0;
       }
@@ -110,16 +106,14 @@
       bar.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
       bar.style.boxSizing = 'border-box';
 
-      var extraBottom = 0;
+      var extraBottom = 25;
 
       if (timer.position === 'BOTTOM_BAR') {
-        // nếu đang ở trong iframe (theme preview) thì đẩy bar lên ~60px
         if (isInIframe()) {
-          extraBottom = 60; // đủ để vượt qua Shopify preview bar
+          extraBottom += 60;
         }
         bar.style.bottom = extraBottom + 'px';
       } else {
-        // TOP_BAR: đặt dưới header/menu
         var offset = computeTopOffsetUnderHeader();
         bar.style.top = offset + 'px';
       }
@@ -136,7 +130,7 @@
       document.body.appendChild(bar);
 
       if (timer.position === 'BOTTOM_BAR') {
-        reserveSpaceForBottomBar(bar, extraBottom);
+        reserveSpaceForBottomBar(bar, extraBottom + 18);
       }
 
       var target = null;
